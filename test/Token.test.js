@@ -7,6 +7,7 @@ require("chai").use(require("chai-as-promised")).should();
 
 //contract("Token", (accounts) => {
 contract("Token", ([deployer, receiver, exchange]) => {
+  // sends all the ganache accounts
   let token;
 
   const name = "OSD Token";
@@ -16,6 +17,7 @@ contract("Token", ([deployer, receiver, exchange]) => {
 
   beforeEach(async () => {
     //const contract = new web3.eth.Contract(abi, address3);
+    // Deploy Token contract
     token = await Token.new();
   });
 
@@ -53,8 +55,8 @@ contract("Token", ([deployer, receiver, exchange]) => {
     describe("success", () => {
       beforeEach(async () => {
         // make a transfer
-        // result holds the transaction object
         amount = tokens(100);
+        // result holds the transaction object
         result = await token.transfer(receiver, amount, {
           from: deployer,
         });
@@ -62,17 +64,17 @@ contract("Token", ([deployer, receiver, exchange]) => {
 
       it("transfers token balances", async () => {
         let balance;
-
+        // checks balance of deployer
         balance = await token.balanceOf(deployer);
         console.log("deployer balance after: ", balance.toString());
         balance.toString().should.equal(tokens(999900).toString());
+        // checks balance of receiver
         balance = await token.balanceOf(receiver);
         console.log("receiver balance after: ", balance.toString());
         balance.toString().should.equal(tokens(100).toString());
       });
 
       it("emits a Transfer event", async () => {
-        // console.log(result);
         // console.log(result.logs);
         const log = result.logs[0];
         log.event.should.equal("Transfer");
@@ -111,6 +113,7 @@ contract("Token", ([deployer, receiver, exchange]) => {
 
     beforeEach(async () => {
       amount = tokens(100);
+      // the deployer gives the exchange approval to spend an amount of the deployer's tokens
       result = await token.approve(exchange, amount, { from: deployer });
     });
 
@@ -121,7 +124,6 @@ contract("Token", ([deployer, receiver, exchange]) => {
       });
 
       it("emits an Approval event", async () => {
-        // console.log(result);
         // console.log(result.logs);
         const log = result.logs[0];
         log.event.should.equal("Approval");

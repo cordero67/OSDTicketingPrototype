@@ -3,6 +3,8 @@ require("babel-polyfill");
 require("dotenv").config();
 
 module.exports = {
+  // specifies a new network setting, a development network
+  // these are the specifications idenitified by ganache
   networks: {
     development: {
       host: "127.0.0.1",
@@ -15,6 +17,8 @@ module.exports = {
 
   // Configure your compilers
   compilers: {
+    // specifies the solidity compiler to be used
+    // javasciprt version of a solidity compiler
     solc: {
       optimizer: {
         enabled: true,
@@ -23,10 +27,3 @@ module.exports = {
     },
   },
 };
-
-/*
-  // Set default mocha options here, use special reporters etc.
-  mocha: {
-    // timeout: 100000
-  },
-*/

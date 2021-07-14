@@ -3,6 +3,7 @@ pragma solidity >=0.4.22 <0.9.0;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
+// imports the Token solidity contract
 import "./Token.sol";
 
 contract Exchange {
@@ -11,7 +12,7 @@ contract Exchange {
     // State Variables
     address public feeAccount; // account receiving exchange fees
     uint256 public feePercent; // exchange fee amount
-    address constant ETHER = address(0); // stores Ether in tokens mapping
+    address constant ETHER = address(0); // creates an address that will store Ether in tokens mapping
     uint256 public orderCount; // tracks the number of orders placed on exchange
 
     mapping(address => mapping(address => uint256)) public tokens; // tracks the users that own each token
@@ -73,36 +74,51 @@ contract Exchange {
     }
 
     // fallback function reverts if ether sent directly to Exchange contract
-    function() external {
+    function() external payable {
         revert();
     }
 
-    function createOrder() public returns (bool success) {}
-
     function depositEther() public payable {
+        // updates the balances tracked inside the Exchange contract
         tokens[ETHER][msg.sender] = tokens[ETHER][msg.sender].add(msg.value);
         emit Deposit(ETHER, msg.sender, msg.value, tokens[ETHER][msg.sender]);
     }
 
     function withdrawEther(uint256 _amount) public payable {
+        // checks if msg.sender has enough ETHER to sent
         require(tokens[ETHER][msg.sender] >= _amount);
+        // updates the balances tracked inside the Exchange contract
         tokens[ETHER][msg.sender] = tokens[ETHER][msg.sender].sub(_amount);
+        // transfer() will send ether from the contract to the msg.sender address
         msg.sender.transfer(_amount);
         emit Withdrawal(ETHER, msg.sender, _amount, tokens[ETHER][msg.sender]);
     }
 
     function depositToken(address _token, uint256 _amount) public {
-        require(Token(_token).transferFrom(msg.sender, address(this), _amount)); // generates an instance of the Token contract on the Ethereum network
+        // generates an instance of Token contract with address of _token that lives on Ethereum
+        // then runs the transferFrom() function on that contract
+        // msg.sender represents the account that has the tokens
+        // address(this) represents this contract, i.e. the exchange, which will receive the tokens
+        // net is that user1 delivered tokens to this contract, i.e. the exchange
+        require(Token(_token).transferFrom(msg.sender, address(this), _amount));
+        // does not allow for ETHER to be deposited
         require(_token != ETHER);
+        // updates the balances tracked inside the Exchange contract
         tokens[_token][msg.sender] = tokens[_token][msg.sender].add(_amount);
         emit Deposit(_token, msg.sender, _amount, tokens[_token][msg.sender]);
     }
 
     function withdrawToken(address _token, uint256 _amount) public {
+        // checks if msg.sender has enough tokens to send
         require(tokens[_token][msg.sender] >= _amount);
+        // do not allow Ether to be deposited
         require(_token != ETHER);
-        require(Token(_token).transfer(msg.sender, _amount)); // generates an instance of the Token contract on the Ethereum network
+        // generates an instance of the Token contract on the Ethereum network
+        // then runs the transfer() function
+        // this will send tokens from the Exchange contract to msg.sender
+        require(Token(_token).transfer(msg.sender, _amount));
         //require(_token != ETHER);
+        // updates the balances tracked inside the Exchange contract
         tokens[_token][msg.sender] = tokens[_token][msg.sender].sub(_amount);
         emit Withdrawal(
             _token,
@@ -117,6 +133,7 @@ contract Exchange {
         view
         returns (uint256)
     {
+        // checks a specific balance inside the tokens mapping
         return tokens[_token][_user];
     }
 
@@ -126,17 +143,6 @@ contract Exchange {
         address _tokenGive,
         uint256 _amountGive
     ) public {
-        /*
-        _Order memory order = _Order({
-            id: 9876,
-            user: msg.sender,
-            tokenGet: _tokenGet,
-            amountGet: _amountGet,
-            tokenGive: _tokenGive,
-            amountGive: _amountGive,
-            timestamp: now
-        });
-        */
         orderCount = orderCount.add(1);
         orders[orderCount] = _Order(
             orderCount,
@@ -159,9 +165,13 @@ contract Exchange {
     }
 
     function cancelOrder(uint256 _id) public {
+        // extracts the specific order from the orders mapping that is in storage
         _Order storage _order = orders[_id];
+        // checks that order creator matches the address that is trying to cancel order
         require(msg.sender == address(_order.user));
+        // requires that id of order extracted matches id of order being cancelled
         require(_id == _order.id);
+        // adds the order to the ordersCancelled mapping
         ordersCancelled[_id] = true;
         emit Cancel(
             _order.id,
@@ -175,10 +185,13 @@ contract Exchange {
     }
 
     function fillOrder(uint256 _id) public {
+        // checks that the order id is valid
         require(_id > 0 && _id <= orderCount);
+        // checks that order has not been cancelled
         require(!ordersCancelled[_id]);
+        // checks that order has not been filled
         require(!ordersFilled[_id]);
-        // fetch the order
+        // extracts the specific order from the orders mapping that is in storage
         _Order storage _order = orders[_id];
         _trade(
             _order.id,
@@ -188,6 +201,7 @@ contract Exchange {
             _order.tokenGive,
             _order.amountGive
         );
+        // marks order as filled
         ordersFilled[_order.id] = true;
     }
 
@@ -199,18 +213,33 @@ contract Exchange {
         address _tokenGive,
         uint256 _amountGive
     ) internal {
-        // fee is subtracted from the amount received by the address that fills the order
+        // based on perception of filler
+        // _tokenGive is the token type they receive
+        // _amountGive is the amount of the token they recieve
+        // _tokenGet is the token type they give
+        // _amountGet is the amount of the token they give
+
+        // fee is calculated based on the amount received by the filler
         uint256 _feeAmount = _amountGive.mul(feePercent).div(100);
 
+        // fee is subtracted from the amount received by the address that fills the order
+
+        // amount of tokens that filler gives to user plus the fee amount
         tokens[_tokenGet][msg.sender] = tokens[_tokenGet][msg.sender].sub(
             _amountGet.add(_feeAmount)
         );
+        // amount of tokens that user receives from filler
         tokens[_tokenGet][_user] = tokens[_tokenGet][_user].add(_amountGet);
+
+        // amount of tokens that fee account receives from filler
         tokens[_tokenGet][feeAccount] = tokens[_tokenGet][feeAccount].add(
             _feeAmount
         );
 
+        // amount of tokens that user gives to filler
         tokens[_tokenGive][_user] = tokens[_tokenGive][_user].sub(_amountGive);
+
+        // amount of tokens that filler receives from the user
         tokens[_tokenGive][msg.sender] = tokens[_tokenGive][msg.sender].add(
             _amountGive
         );
@@ -224,6 +253,5 @@ contract Exchange {
             msg.sender,
             now
         );
-        // mark order as filled
     }
 }
