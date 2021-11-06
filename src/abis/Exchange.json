@@ -18546,13 +18546,12 @@
         }
       },
       "links": {},
-      "address": "0x8248a03fC941105A10Be687923a82A76FA7BC88c",
-      "transactionHash": "0x9c6492d36ab50cd6f61f42b2c1f11a05bc87671f474d34fe0c00bf2593756162"
+      "address": "0x69D1f1716cc535B2C53109165Ea6cC7777e4649c",
+      "transactionHash": "0x9d43b2a1eeca53e153ceabfe57d9b151b94c73d50326ebe759fffdd574bdab19"
     }
   },
   "schemaVersion": "3.0.23",
-  "updatedAt": "2021-07-12T19:29:17.315Z",
-  "networkType": "ethereum",
+  "updatedAt": "2021-11-03T13:13:35.451Z",
   "devdoc": {
     "methods": {}
   },

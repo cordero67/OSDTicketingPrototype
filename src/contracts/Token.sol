@@ -12,6 +12,7 @@ contract Token {
     string public symbol = "OSD"; // optional
     uint256 public decimals = 18; // optional
     uint256 public totalSupply; // required
+    string tempVariable = "tempVariable";
 
     mapping(address => uint256) public balanceOf; // required
     mapping(address => mapping(address => uint256)) public allowance; // required
