@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: MIT
-//pragma solidity ^0.5.0;
 pragma solidity >=0.4.22 <0.9.0;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 contract Token {
-    using SafeMath for uint256;
+    //using SafeMath for uint256;
 
     // State Variables
     string public name = "OSD Token"; // optional
@@ -38,8 +37,12 @@ contract Token {
     ) internal {
         // requires a valid recipient address
         require(_to != address(0));
-        balanceOf[_from] = balanceOf[_from].sub(_value);
-        balanceOf[_to] = balanceOf[_to].add(_value);
+
+        balanceOf[_from] -= _value;
+        //balanceOf[_from] = balanceOf[_from].sub(_value);
+
+        balanceOf[_to] += _value;
+        //balanceOf[_to] = balanceOf[_to].add(_value);
         // requires a Transfer event to be fired
         emit Transfer(_from, _to, _value);
     }
@@ -82,7 +85,8 @@ contract Token {
         // requires _from address to have enough tokens
         require(balanceOf[_from] >= _value);
         // reduces the allowance of the _to address
-        allowance[_from][msg.sender] = allowance[_from][msg.sender].sub(_value);
+        allowance[_from][msg.sender] -= _value;
+        //allowance[_from][msg.sender] = allowance[_from][msg.sender].sub(_value);
         _transfer(_from, _to, _value);
         return true;
     }
