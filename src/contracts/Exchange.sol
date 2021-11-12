@@ -68,6 +68,7 @@ contract Exchange {
         uint256 timestamp; // time when order was created
     }
 
+    // contructor function
     constructor(address _feeAccount, uint256 _feePercent) public {
         feeAccount = _feeAccount;
         feePercent = _feePercent;
