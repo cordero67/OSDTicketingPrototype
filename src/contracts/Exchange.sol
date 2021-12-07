@@ -6,6 +6,18 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 // imports the Token solidity contract
 import "./Token.sol";
 
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+
 contract Exchange {
     using SafeMath for uint256;
 
@@ -15,6 +27,8 @@ contract Exchange {
     address constant ETHER = address(0); // creates an address that will store Ether in tokens mapping
     uint256 public orderCount; // tracks the number of orders placed on exchange
 
+    // first address is the token address
+    // second address is the address of the token holder who made deposit
     mapping(address => mapping(address => uint256)) public tokens; // tracks the users that own each token
     mapping(uint256 => _Order) public orders;
     mapping(uint256 => bool) public ordersCancelled;
@@ -68,7 +82,6 @@ contract Exchange {
         uint256 timestamp; // time when order was created
     }
 
-    // contructor function
     constructor(address _feeAccount, uint256 _feePercent) public {
         feeAccount = _feeAccount;
         feePercent = _feePercent;
@@ -79,12 +92,14 @@ contract Exchange {
         revert();
     }
 
+    // receives ether sent to this contract
     function depositEther() public payable {
         // updates the balances tracked inside the Exchange contract
         tokens[ETHER][msg.sender] = tokens[ETHER][msg.sender].add(msg.value);
         emit Deposit(ETHER, msg.sender, msg.value, tokens[ETHER][msg.sender]);
     }
 
+    // receives ether sent to this contract
     function withdrawEther(uint256 _amount) public payable {
         // checks if msg.sender has enough ETHER to sent
         require(tokens[ETHER][msg.sender] >= _amount);
@@ -95,6 +110,7 @@ contract Exchange {
         emit Withdrawal(ETHER, msg.sender, _amount, tokens[ETHER][msg.sender]);
     }
 
+    // receives address of a pecific token and amount of tokens to be deposited
     function depositToken(address _token, uint256 _amount) public {
         // generates an instance of Token contract with address of _token that lives on Ethereum
         // then runs the transferFrom() function on that contract
@@ -256,3 +272,4 @@ contract Exchange {
         );
     }
 }
+nach

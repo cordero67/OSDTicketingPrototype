@@ -1,10 +1,21 @@
 import { tokens, ether, EVM_REVERT } from "./helpers";
-const { default: Web3 } = require("web3");
 
 const Exchange = artifacts.require("./Exchange");
 const Token = artifacts.require("./Token");
 
 require("chai").use(require("chai-as-promised")).should();
+
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
 
 contract("Exchange", ([deployer, feeAccount, user1, user2]) => {
   let token;
@@ -30,6 +41,8 @@ contract("Exchange", ([deployer, feeAccount, user1, user2]) => {
 
     it("tracks the feePercent", async () => {
       const result = await exchange.feePercent();
+      //
+      //
       result.toString().should.equal(feePercent.toString());
     });
   });
@@ -41,6 +54,9 @@ contract("Exchange", ([deployer, feeAccount, user1, user2]) => {
         .should.be.rejectedWith(EVM_REVERT);
     });
   });
+
+  //
+  //
 
   describe("depositing Ether", () => {
     let result;
@@ -195,6 +211,17 @@ contract("Exchange", ([deployer, feeAccount, user1, user2]) => {
       });
     });
   });
+  //
+  //
+  //
+  //
+  //
+  //
+  //
+  //
+  //
+  //
+  //
 
   describe("withdraw tokens", () => {
     let result;
@@ -387,15 +414,23 @@ contract("Exchange", ([deployer, feeAccount, user1, user2]) => {
           event.tokenGet
             .toString()
             .should.equal(token.address, "tokenGet address is correct");
+          //
+          //
           event.amountGet
             .toString()
             .should.equal(tokens(1).toString(), "amountGet amount is correct");
+          //
+          //
           event.tokenGive
             .toString()
             .should.equal(ETHER_ADDRESS, "tokenGive address is correct");
+          //
+          //
           event.amountGive
             .toString()
             .should.equal(tokens(1).toString(), "tokenGive amount is correct");
+          //
+          //
           event.timestamp
             .toString()
             .length.should.be.at.least(1, "timestamp is present");
@@ -408,12 +443,18 @@ contract("Exchange", ([deployer, feeAccount, user1, user2]) => {
             .cancelOrder("999", { from: user1 })
             .should.be.rejectedWith(EVM_REVERT);
         });
+        //
+        //
+        //
 
         it("rejects an unauthorized order", async () => {
           await exchange
             .cancelOrder("1", { from: deployer })
             .should.be.rejectedWith(EVM_REVERT);
         });
+        //
+        //
+        //
       });
     });
 
@@ -521,5 +562,6 @@ contract("Exchange", ([deployer, feeAccount, user1, user2]) => {
         });
       });
     });
+    //
   });
 });
