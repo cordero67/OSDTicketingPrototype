@@ -1,50 +1,65 @@
-import { tokens, EVM_REVERT } from "./helpers";
-const { default: Web3 } = require("web3");
+//const { assert } = require("chai");
 
+//import { tokens } from "./helpers";
 const Token = artifacts.require("./Token");
 
-require("chai").use(require("chai-as-promised")).should();
+//require("chai").use(require("chai-as-promised")).should();
 
-//contract("Token", (accounts) => {
+// Helper function
+const tokens = (_number) => {
+  //console.log("Input: ", _number);
+  const result = web3.utils.toWei(_number.toString(), "ether");
+  //console.log("Output: ", result);
+  return result;
+};
+
+// injects all the accounts from ganache blockchain created locally
+//contract("token", (accounts) => {
 contract("Token", ([deployer, receiver, exchange]) => {
-  // sends all the ganache accounts
   let token;
-
-  const name = "OSD Token";
-  const symbol = "OSD";
+  const name = "Blu Mun Token";
+  const symbol = "BLMN";
   const decimals = "18";
-  const totalSupply = tokens(1000000).toString();
+  const totalSupply = tokens(1000000);
 
   beforeEach(async () => {
-    //const contract = new web3.eth.Contract(abi, address3);
-    // Deploy Token contract
     token = await Token.new();
   });
 
   describe("deployment", () => {
     it("tracks the name", async () => {
       const result = await token.name();
-      result.should.equal(name);
+      assert.equal(result, name, "the name is not registered");
+      //result.should.equal(name);
     });
 
     it("tracks the symbol", async () => {
       const result = await token.symbol();
-      result.should.equal(symbol);
+      assert.equal(result, symbol, "the symbol is not registered");
     });
 
     it("tracks the decimals", async () => {
       const result = await token.decimals();
-      result.toString().should.equal(decimals);
+      assert.equal(
+        result.toString(),
+        decimals,
+        "the decimals is not registered"
+      );
     });
 
-    it("tracks the totalSupply", async () => {
+    it("tracks the total supply", async () => {
       const result = await token.totalSupply();
-      result.toString().should.equal(totalSupply.toString());
+      //console.log("result.toString(): ", result.toString());
+      //console.log("totalSupply: ", totalSupply);
+      assert.equal(result, totalSupply, "the totalSupply is not registered");
     });
 
-    it("assigns total supply to token creator", async () => {
+    it("assigns the total token supply to the deployer", async () => {
+      //const result = await token.balanceOf(accounts[0]);
       const result = await token.balanceOf(deployer);
-      result.toString().should.equal(totalSupply.toString());
+      //console.log("result: ", result);
+      //console.log("totalSupply: ", totalSupply);
+      assert.equal(result, totalSupply, "totalSupply not sent to owner");
     });
   });
 
@@ -52,58 +67,113 @@ contract("Token", ([deployer, receiver, exchange]) => {
     let amount;
     let result;
 
-    describe("success", () => {
+    describe("successfull 'transfer()' transactions", () => {
       beforeEach(async () => {
-        // make a transfer
         amount = tokens(100);
-        // result holds the transaction object
         result = await token.transfer(receiver, amount, {
           from: deployer,
         });
       });
-
       it("transfers token balances", async () => {
         let balance;
-        // checks balance of deployer
+        //balance = await token.balanceOf(deployer);
+        //console.log("deployer balance before: ", balance.toString());
+        //balance = await token.balanceOf(receiver);
+        //console.log("recipient balance before: ", balance.toString());
+
         balance = await token.balanceOf(deployer);
-        console.log("deployer balance after: ", balance.toString());
-        balance.toString().should.equal(tokens(999900).toString());
-        // checks balance of receiver
+        //console.log("deployer balance after: ", balance.toString());
+        assert.equal(balance, tokens(999900), "balance does not equal 999900");
         balance = await token.balanceOf(receiver);
-        console.log("receiver balance after: ", balance.toString());
-        balance.toString().should.equal(tokens(100).toString());
+        //console.log("recipient balance after: ", balance.toString());
+        assert.equal(balance, tokens(100), "balance does not equal 100");
       });
 
       it("emits a Transfer event", async () => {
-        // console.log(result.logs);
         const log = result.logs[0];
-        log.event.should.equal("Transfer");
-        const event = log.args;
-        event.from.toString().should.equal(deployer, "from is correct");
-        event.to.toString().should.equal(receiver, "to is correct");
-        event.value
-          .toString()
-          .should.equal(amount.toString(), "value is correct");
+        //console.log("log: ", log);
+        assert.equal(
+          log.event,
+          "Transfer",
+          "should have fired a Transfer event"
+        );
+        //console.log("args.from: ", log.args.from);
+        //console.log("args.to: ", log.args.to);
+        assert.equal(
+          log.args.from,
+          deployer,
+          "the from address should be deployer"
+        );
+        assert.equal(
+          log.args.to,
+          receiver,
+          "the to address should be receiver"
+        );
+        assert.equal(log.args.value, amount, "the value amount should be 100");
       });
     });
 
-    describe("failure", () => {
-      it("rejects insufficient balance", async () => {
+    // NEED TO REVISIT THIS, video 42:45: Transfer Tokens
+    // The try catch block is not correct nor are the tests
+    describe("failed 'transfer()' transactions", () => {
+      it("rejects insufficient balances", async () => {
         let invalidAmount;
-        invalidAmount = tokens(100000000);
-        await token
-          .transfer(receiver, invalidAmount, { from: deployer })
-          .should.be.rejectedWith(EVM_REVERT);
 
-        await token
-          .transfer(deployer, invalidAmount, { from: receiver })
-          .should.be.rejectedWith(EVM_REVERT);
-      });
+        invalidAmount = tokens(0);
 
-      it("rejects invalid recipient", async () => {
-        await token.transfer(0x0, amount, { from: deployer }).should.be
-          .rejected;
+        let result = await token.balanceOf(receiver);
+        //console.log("Result: ", result.toString());
+        try {
+          await token.transfer(deployer, invalidAmount, { from: receiver });
+          //console.log("Amount is OK");
+          assert(false);
+        } catch (error) {
+          //console.log("Error message: ", error.message);
+          assert.equal(
+            error.message,
+            "Returned error: VM Exception while processing transaction: revert"
+          );
+        }
+
+        try {
+          await token.transfer(deployer, invalidAmount, { from: receiver });
+          //console.log("Amount is OK");
+          assert(false);
+        } catch (error) {
+          assert(error);
+        }
+        //console.log("Continuing");
+
+        invalidAmount = tokens(1000000000000000);
+        try {
+          await token.transfer(receiver, invalidAmount, { from: deployer });
+          //console.log("Amount is GOOD");
+        } catch (error) {
+          assert.equal(
+            error.message,
+            "Returned error: VM Exception while processing transaction: revert"
+          );
+        }
       });
+      /*
+      it("reject invalid address", async () => {
+        let invalidAddress = 0x0;
+        //let invalidAddress = exchange;
+
+        try {
+          await token.transfer(invalidAddress, amount, { from: deployer });
+          console.log("Address is VALID");
+        } catch (error) {
+          assert.equal(
+            error.message,
+            'AssertionError: expected "invalid address (arg="_to", coderType="address", value=0)" to equal "invalid address (arg="_spender", coderType="address", value=0)'
+          );
+          console.log("Address is NOT VALID");
+        }
+
+        console.log("Goodbye");
+      });
+      */
     });
   });
 
@@ -111,35 +181,71 @@ contract("Token", ([deployer, receiver, exchange]) => {
     let amount;
     let result;
 
+    amount = tokens(10);
+
     beforeEach(async () => {
-      amount = tokens(100);
-      // the deployer gives the exchange approval to spend an amount of the deployer's tokens
       result = await token.approve(exchange, amount, { from: deployer });
     });
 
-    describe("success", () => {
-      it("allocates an allowance for delegated token spending on an exchange", async () => {
-        const allowance = await token.allowance(deployer, exchange);
-        allowance.toString().should.equal(amount.toString());
+    describe("successfull 'approve()' transactions", () => {
+      it("allocates a token allowance for delegated spending on an exchange", async () => {
+        const allowance = await token.allowance(deployer, exchange, {
+          from: deployer,
+        });
+        //console.log("Hello");
+        assert.equal(
+          allowance,
+          amount,
+          "did not suscessfully record allowance amount"
+        );
       });
 
-      it("emits an Approval event", async () => {
-        // console.log(result.logs);
+      it("emits an Allocate event", async () => {
         const log = result.logs[0];
-        log.event.should.equal("Approval");
-        const event = log.args;
-        event.owner.toString().should.equal(deployer, "owner is correct");
-        event.spender.toString().should.equal(exchange, "spender is correct");
-        event.value
-          .toString()
-          .should.equal(amount.toString(), "value is correct");
+        //console.log("log: ", log);
+        assert.equal(
+          log.event,
+          "Approval",
+          "should have fired an Approval event"
+        );
+        //console.log("args.from: ", log.args.from);
+        //console.log("args.to: ", log.args.to);
+        assert.equal(
+          log.args.owner,
+          deployer,
+          "the owner address should be deployer"
+        );
+        assert.equal(
+          log.args.spender,
+          exchange,
+          "the spender address should be receiver"
+        );
+        assert.equal(log.args.value, amount, "the value amount should be 10");
       });
     });
 
-    describe("failure", () => {
-      it("rejects invalid recipient", async () => {
-        await token.approve(0x0, amount, { from: deployer }).should.be.rejected;
+    // NEED TO REVISIT THIS, video 13:35: Delegated TokenTransfers
+    // The try catch block is not correct nor are the tests
+    describe("failed approve transactions", () => {
+      /*
+      it("reject invalid address", async () => {
+        let invalidAddress = 0x0;
+        //let invalidAddress = exchange;
+
+        try {
+          await token.approve(invalidAddress, amount, { from: deployer });
+          console.log("Address is VALID");
+        } catch (error) {
+          assert.equal(
+            error.message,
+            'invalid address (arg="_spender", coderType="address", value=0)'
+          );
+          console.log("Address is NOT VALID");
+        }
+
+        console.log("Goodbye");
       });
+      */
     });
   });
 
@@ -152,55 +258,83 @@ contract("Token", ([deployer, receiver, exchange]) => {
       await token.approve(exchange, amount, { from: deployer });
     });
 
-    describe("success", () => {
+    describe("successfull 'transferFrom()' transactions", () => {
       beforeEach(async () => {
-        // make a transfer
-        // result holds the transaction object
-        result = await token.transferFrom(deployer, receiver, tokens(90), {
+        result = await token.transferFrom(deployer, receiver, amount, {
           from: exchange,
         });
       });
-
       it("transfers token balances", async () => {
         let balance;
-
         balance = await token.balanceOf(deployer);
-        console.log("deployer balance after: ", balance.toString());
-        balance.toString().should.equal(tokens(999910).toString());
+        assert.equal(balance, tokens(999900), "balance does not equal 999900");
         balance = await token.balanceOf(receiver);
-        console.log("receiver balance after: ", balance.toString());
-        balance.toString().should.equal(tokens(90).toString());
+        assert.equal(balance, tokens(100), "balance does not equal 100");
       });
 
-      it("resets the allowance", async () => {
-        const allowance = await token.allowance(deployer, exchange);
-        allowance.toString().should.equal(tokens(10).toString());
-      });
-
-      it("emits a Transfer event", async () => {
+      it("emits another Transfer event", async () => {
+        //console.log("Result: ", result);
         const log = result.logs[0];
-        log.event.should.equal("Transfer");
-        const event = log.args;
-        event.from.toString().should.equal(deployer, "from is correct");
-        event.to.toString().should.equal(receiver, "to is correct");
-        event.value
-          .toString()
-          .should.equal(tokens(90).toString(), "value is correct");
+        //console.log("log: ", log);
+        assert.equal(
+          log.event,
+          "Transfer",
+          "should have fired a Transfer event"
+        );
+        //console.log("args.from: ", log.args.from);
+        //console.log("args.to: ", log.args.to);
+        assert.equal(
+          log.args.from,
+          deployer,
+          "the from address should be deployer"
+        );
+        assert.equal(
+          log.args.to,
+          receiver,
+          "the to address should be receiver"
+        );
+        assert.equal(log.args.value, amount, "the value amount should be 100");
       });
     });
 
-    describe("failure", () => {
-      it("rejects insufficient amounts", async () => {
+    // NEED TO REVISIT THIS, video 24:15: DelegatedToken Transfers
+    // The try catch block is not correct nor are the tests
+    describe("failed 'transferFrom()' transactions", () => {
+      it("rejects insufficient allowance amounts", async () => {
         let invalidAmount;
-        invalidAmount = tokens(100000000);
-        await token
-          .transferFrom(deployer, receiver, invalidAmount, { from: exchange })
-          .should.be.rejectedWith(EVM_REVERT);
+        invalidAmount = tokens(1000000000000);
+        let result;
+
+        try {
+          await token.transferFrom(deployer, receiver, invalidAmount, {
+            from: exchange,
+          });
+        } catch (error) {
+          //console.log("Error: ", error.message);
+
+          assert.equal(
+            error.message,
+            "Returned error: VM Exception while processing transaction: revert",
+            "properly stopped execution"
+          );
+        }
       });
 
-      it("rejects invalid recipient", async () => {
-        await token.transferFrom(deployer, 0x0, amount, { from: exchange })
-          .should.be.rejected;
+      it("rejects invalid address", async () => {
+        let invalidAddress = 0x0;
+
+        try {
+          await token.transfer(invalidAddress, amount, { from: deployer });
+          console.log("Address is VALID");
+        } catch (error) {
+          //console.log("Error.message: ", error.message);
+
+          assert.equal(
+            error.message,
+            'invalid address (arg="_to", coderType="address", value=0)',
+            "should reject invalid address"
+          );
+        }
       });
     });
   });
