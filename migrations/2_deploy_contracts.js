@@ -1,7 +1,7 @@
 const { default: Web3 } = require("web3");
 
 const Token = artifacts.require("Token");
-const Exchange = artifacts.require("Exchange");
+//const Exchange = artifacts.require("Exchange");
 
 //web3 = new Web3();
 
@@ -11,5 +11,5 @@ module.exports = async function (deployer) {
   const feePercent = 10;
 
   await deployer.deploy(Token);
-  await deployer.deploy(Exchange, feeAccount, feePercent);
+  //await deployer.deploy(Exchange, feeAccount, feePercent);
 };

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.4.22 <0.9.0;
 
-import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+//import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 // imports the Token solidity contract
 import "./Token.sol";
@@ -19,7 +19,7 @@ import "./Token.sol";
 //
 
 contract Exchange {
-    using SafeMath for uint256;
+    //using SafeMath for uint256;
 
     // State Variables
     address public feeAccount; // account receiving exchange fees
